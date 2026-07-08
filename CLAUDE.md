@@ -70,11 +70,11 @@ production polish; J–K are evidence and writeup.
 **Concept:** configuration-as-data and the run directory as a reproducibility contract.
 **Outcome:** `pipeline/config.py` + `pipeline/artifacts.py`; a run dir with `config.json` can be created from Python.
 
-- [ ] **B.1** `pipeline/config.py`: `RunConfig` frozen dataclass + `PARAM_DEFAULTS` (stdlib only!)
-- [ ] **B.2** `resolve_config()`: fill defaults, generate `run_id` (`<timestamp>__<subset>__<slice>`)
-- [ ] **B.3** `to_json`/`from_json` round-trip; record package versions (SPEC 2.2)
-- [ ] **B.4** `pipeline/artifacts.py`: `RunPaths` — every path derived from one root (PLAN §10)
-- [ ] **B.5** `init_run_dir()`; verify the tree matches SPEC 2.1 exactly
+- [x] **B.1** `pipeline/config.py`: `RunConfig` frozen dataclass + `PARAM_DEFAULTS` (stdlib only!)
+- [x] **B.2** `resolve_config()`: fill defaults, generate `run_id` (`<timestamp>__<subset>__<slice>`)
+- [x] **B.3** `to_json`/`from_json` round-trip; record package versions (SPEC 2.2)
+- [x] **B.4** `pipeline/artifacts.py`: `RunPaths` — every path derived from one root (PLAN §10)
+- [x] **B.5** `init_run_dir()`; verify the tree matches SPEC 2.1 exactly *(17 unit tests in tests/)*
 - **Learn:** frozen dataclasses, single-source-of-truth config, why `run_id` generation must be deterministic and collision-safe
 
 ---
