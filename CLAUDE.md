@@ -83,11 +83,11 @@ production polish; J–K are evidence and writeup.
 **Concept:** wrapping ad-hoc scripts as code, separating *what to run* (pure command builders) from *how to run it* (subprocess now, Docker later).
 **Outcome:** `python -m pipeline.cli prepare-run|run-agent|run-eval` produce a populated run dir.
 
-- [ ] **C.1** `agent_runner.py`: `build_agent_command()` translating RunConfig → `mini-extra swebench` args (mirror `scripts/mini-swe-bench-batch.sh`)
-- [ ] **C.2** `run_agent()`: subprocess + `MSWEA_COST_TRACKING=ignore_errors` env; relocate `preds.json` out of `trajectories/` to match SPEC 2.1 (PLAN §8 W1), validate non-empty
-- [ ] **C.3** `evaluator.py`: `build_eval_command()` → `swebench.harness.run_evaluation` args; `run_eval()` relocates logs/summary into `run-eval/`
-- [ ] **C.4** `cli.py`: argparse subcommands `prepare-run`, `run-agent`, `run-eval`; one-line JSON to stdout
-- [ ] **C.5** Smoke test: 1-instance live run via CLI — astropy-12907 submitted+resolved (resolve_rate 1.0); workers-interleaving check deferred to the Block E multi-instance trigger
+- [x] **C.1** `agent_runner.py`: `build_agent_command()` translating RunConfig → `mini-extra swebench` args (mirror `scripts/mini-swe-bench-batch.sh`)
+- [x] **C.2** `run_agent()`: subprocess + `MSWEA_COST_TRACKING=ignore_errors` env; relocate `preds.json` out of `trajectories/` to match SPEC 2.1 (PLAN §8 W1), validate non-empty
+- [x] **C.3** `evaluator.py`: `build_eval_command()` → `swebench.harness.run_evaluation` args; `run_eval()` relocates logs/summary into `run-eval/`
+- [x] **C.4** `cli.py`: argparse subcommands `prepare-run`, `run-agent`, `run-eval`; one-line JSON to stdout
+- [x] **C.5** Smoke test: 1-instance live run via CLI — astropy-12907 submitted+resolved (resolve_rate 1.0); workers-interleaving check deferred to the Block E multi-instance trigger
 - **Learn:** subprocess.run patterns (check, env, cwd), pure command builders, where the harness writes its outputs and why we relocate them
 
 ---
