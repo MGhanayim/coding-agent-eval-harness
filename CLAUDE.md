@@ -159,11 +159,11 @@ production polish; J–K are evidence and writeup.
 **Concept:** composing Airflow + MLflow + MinIO into one deployable stack.
 **Outcome:** `docker compose up` brings up everything; the DAG reaches services by name. SPEC Area 5 done.
 
-- [ ] **I.1** Start from the official Airflow 3.2 compose file; strip to LocalExecutor + postgres
-- [ ] **I.2** Add `mlflow` and `minio` services (+ bucket-init job); volumes for durability
-- [ ] **I.3** Env wiring: extend `.env.example` (SPEC 5.2); `HOST_PROJECT_DIR` for DockerOperator mounts
-- [ ] **I.4** Attach DockerOperator containers to the compose network
-- [ ] **I.5** Full smoke run under compose (trigger → 4 tasks → resolved 1/1 → MLflow + MinIO in-network)
+- [x] **I.1** Start from the official Airflow 3.2 compose file; strip to LocalExecutor + postgres
+- [x] **I.2** Add `mlflow` and `minio` services (+ bucket-init job); volumes for durability
+- [x] **I.3** Env wiring: extend `.env.example` (SPEC 5.2); `HOST_PROJECT_DIR` for DockerOperator mounts
+- [x] **I.4** Attach DockerOperator containers to the compose network *(gotcha: MLflow 3.x DNS-rebinding protection rejects Host `mlflow:5000` — fixed via `MLFLOW_SERVER_ALLOWED_HOSTS`)*
+- [x] **I.5** Full smoke run under compose (trigger → 4 tasks → resolved 1/1 → MLflow + MinIO in-network)
 - **Learn:** compose services/networks/volumes/healthchecks, Airflow-in-Docker layout, the DockerOperator-under-compose host-path gotcha (PLAN §8 W3)
 
 ---

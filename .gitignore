@@ -17,7 +17,11 @@ __pycache__
 /logs/
 mlruns/
 mlartifacts/
+mlflow.db
 minio-data/
+# compose bind-mount targets created at runtime
+/config/
+/plugins/
 
 # Upstream reference clones (see ASSIGNMENT.md prerequisites)
 mini-swe-agent/
