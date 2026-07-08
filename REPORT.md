@@ -58,7 +58,7 @@ The four tasks, with retry/timeout policy:
 
 | task | does | retries | timeout |
 |---|---|---|---|
-| `prepare_run` | resolve params → `runs/<run-id>/config.json`, push run_id to XCom | 0 | 1 m |
+| `prepare_run` | resolve params → `runs/<run-id>/config.json`, push `{run_id, run_dir}` to XCom | 0 | 5 m (covers cold `uv` bootstrap) |
 | `run_agent` | mini-swe-agent batch → trajectories + `preds.json` | 1 | 120 m (env-tunable) |
 | `run_eval` | SWE-bench harness → per-instance verdicts | 1 | 90 m (env-tunable) |
 | `summarize_and_log` | metrics → manifest → S3 upload → MLflow (idempotent) | 2 | 5 m |
@@ -73,6 +73,12 @@ overwrites, MLflow finds-or-creates by `run_id` tag.
 `PARAM_DEFAULTS`) offers `split, subset, model, task_slice, workers, cost_limit, run_id`.
 Every experiment value is a parameter — nothing is hard-coded in the DAG (SPEC C1).
 
+Two UI quirks to know (both hit during the real deployment):
+- Under compose, new DAGs start **paused** — flip the toggle before the first trigger.
+- The Airflow 3.2 trigger form treats `run_id` as required even though the DAG's default
+  is "auto-generate" — type any unused slug (e.g. `my-batch-1`); it becomes the run dir
+  name, S3 prefix, and MLflow run name.
+
 **CLI equivalent (same code path the DAG uses):**
 
 ```bash
@@ -82,8 +88,9 @@ uv run python -m pipeline.cli run-eval   --run-dir runs/<id>
 uv run python -m pipeline.cli summarize  --run-dir runs/<id>
 ```
 
-**Rerun by run id:** trigger the DAG with identical params plus `run_id=<id>-rerun`.
-`prepare-run` fails loudly (`FileExistsError`) rather than overwrite an existing run dir.
+**Rerun by run id:** trigger the DAG with identical params plus a fresh id, e.g.
+`run_id=<id>-rerun`. Reusing an existing id fails loudly at `prepare-run` (with guidance
+to pick a fresh suffix) rather than overwrite a previous run's artifacts.
 
 ## 3. Artifact layout (the reproducibility contract)
 
@@ -105,7 +112,7 @@ Verified reconstruction test (SPEC 2.2/2.4): the folder was downloaded back from
 (`nebius/moonshotai/Kimi-K2.6`), which slice (`0:1` of verified/test), the resolve rate
 (1.0), and where full artifacts live (the manifest's own S3 URI).
 
-## 4. Completed evaluation (real VM run — the graded evidence)
+## 4. Completed evaluation (real VM run — the headline evidence)
 
 Run **`graded-batch-1`**, triggered on a Nebius VM (8 vCPU / 32 GB, x86_64) under the full
 docker-compose production stack (`EXECUTION_MODE=docker`, every step a `DockerOperator`
@@ -152,7 +159,15 @@ next to the earlier sanity check (resolve_rate 1.0) in the same comparison view.
 | MLflow / MinIO | run manually when needed | compose services (`http://mlflow:5000`, `http://minio:9000`) |
 | env | `.env` + host paths | `.env` + compose overrides (in-network endpoints) |
 
-Same DAG file, same CLI, same artifact tree in both.
+Same DAG file, same CLI, same artifact tree in both. Production mode additionally needs
+the task image built once on the host: `docker build -t coding-agent-eval-harness:latest .`
+
+On a remote VM, keep all service ports closed to the internet (only SSH open) and reach
+the UIs through a tunnel — note the local MLflow remap, since macOS AirPlay owns port 5000:
+
+```bash
+ssh -N -L 8080:localhost:8080 -L 5002:localhost:5000 -L 9001:localhost:9001 <vm-host>
+```
 
 ## 7. Operational notes & gotchas (learned the hard way)
 

@@ -11,8 +11,8 @@
 
 ## Demo
 
-Deployed to a Nebius VM under the full `docker-compose` stack; a real 10-instance graded
-batch resolved 6/10 (`resolve_rate 0.6`) — full evidence in [REPORT.md](REPORT.md) and
+Deployed to a Nebius VM under the full `docker-compose` stack; a real 10-instance batch
+resolved 6/10 (`resolve_rate 0.6`) — full evidence in [REPORT.md](REPORT.md) and
 [`runs/graded-batch-1/`](runs/graded-batch-1/).
 
 ![Airflow: two independent successful runs](screenshots/airflow_dag.png)
@@ -34,19 +34,21 @@ batch resolved 6/10 (`resolve_rate 0.6`) — full evidence in [REPORT.md](REPORT
 ## Quick Start
 
 ```bash
-git clone <repo-url> && cd coding-agent-eval-harness
+git clone https://github.com/MGhanayim/coding-agent-eval-harness.git && cd coding-agent-eval-harness
 uv sync
-cp .env.example .env          # add your NEBIUS_API_KEY
+cp .env.example .env          # add your NEBIUS_API_KEY; on Linux set DOCKER_GID + HOST_PROJECT_DIR
 
-# Easy mode: standalone Airflow
-bash run-airflow-standalone.sh          # UI at http://localhost:8080
+# Easy mode: standalone Airflow (subprocess execution)
+bash run-airflow-standalone.sh                    # UI at http://localhost:8080 (admin/admin)
 
-# Production mode: full stack
-docker compose up -d                    # Airflow + MLflow + MinIO
+# Production mode: full stack (DockerOperator execution)
+docker build -t coding-agent-eval-harness:latest .   # the task image the operators run
+docker compose up -d                                 # Airflow + MLflow + MinIO (UI: airflow/airflow)
 ```
 
-Trigger the `evaluate_agent` DAG with e.g. `task_slice=0:3, cost_limit=0` for a 3-instance
-smoke run.
+Unpause the `evaluate_agent` DAG, then trigger it with e.g. `task_slice=0:3` for a
+3-instance smoke run. (The trigger form requires `run_id` — any unused slug works;
+leave the rest at their defaults.)
 
 ## Architecture
 

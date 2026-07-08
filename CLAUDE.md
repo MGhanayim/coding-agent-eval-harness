@@ -185,10 +185,10 @@ production polish; J–K are evidence and writeup.
 **Concept:** the writeup is a graded artifact (10%) — reproducibility in prose.
 **Outcome:** REPORT.md + portfolio README complete; every SPEC checkbox ticked.
 
-- [ ] **K.1** `REPORT.md`: architecture (reuse PLAN diagrams), trigger instructions, artifact layout, MLflow evidence, one completed run analysis, rerun-by-run-id *(drafted; finalize with J evidence)*
-- [ ] **K.2** Fill in `README.md` skeleton: demo screenshot, quick start, architecture summary *(quick start + real example done; demo screenshot after J)*
-- [x] **K.3** Sweep SPEC.md Verification Checklist — every box, honestly *(all ticked except 6.1/6.3, gated on Block J)*
-- [ ] **K.4** Repo hygiene: no secrets, no stray outputs, no homework language (then consider `/dehomework-repo`)
+- [x] **K.1** `REPORT.md`: architecture (reuse PLAN diagrams), trigger instructions, artifact layout, MLflow evidence, one completed run analysis, rerun-by-run-id *(finalized with the real VM run + screenshots + live-discovered UI quirks)*
+- [x] **K.2** Fill in `README.md` skeleton: demo screenshot, quick start, architecture summary *(real clone URL, docker build step, demo screenshots, LICENSE added)*
+- [x] **K.3** Sweep SPEC.md Verification Checklist — every box, honestly *(all 16 boxes ticked)*
+- [x] **K.4** Repo hygiene: no secrets, no stray outputs, no homework language in portfolio-facing docs *(key-value scan, IP/hostname/email scan, tracked-file audit — all clean; learning docs deliberately keep their framing)*
 - **Learn:** writing for reproducibility, portfolio framing of course work
 
 ---

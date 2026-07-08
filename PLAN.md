@@ -153,7 +153,7 @@ pipeline/cli.py ──► agent_runner.py ──► artifacts.py ──► confi
        truth for later steps)                                  (harness summary          S3 upload,
                                                                 + per-instance)          MLflow run
  retries: 0                  retries: 1                   retries: 1                 retries: 2
- timeout: 1m                 timeout: param-scaled        timeout: param-scaled      timeout: 5m
+ timeout: 5m                 timeout: param-scaled        timeout: param-scaled      timeout: 5m
 ```
 
 Inside `summarize_and_log` (CLI `summarize`), strictly ordered:
