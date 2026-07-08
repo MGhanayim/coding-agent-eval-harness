@@ -60,6 +60,30 @@ def _paths_from(run_dir: str) -> RunPaths:
     return RunPaths(root=Path(run_dir).resolve())
 
 
+def _summarize(config, paths: RunPaths) -> dict:
+    """The summarize_and_log step: metrics → manifest → MLflow logging.
+    MLflow is env-gated (MLFLOW_TRACKING_URI): unset means skipped, so the
+    CLI stays runnable before the service exists. S3 upload lands in
+    Block G; remote_uri stays empty until then."""
+    from pipeline import tracking  # heavy import, summarize-only
+
+    run_metrics = metrics.collect_metrics(paths)
+    metrics.write_metrics(paths, run_metrics)
+    write_manifest(paths, build_manifest(paths, remote_uri=""))
+
+    mlflow_run_id = ""
+    if tracking.tracking_uri():
+        mlflow_run_id = tracking.log_run(
+            config, run_metrics, artifact_uri="", local_path=str(paths.root)
+        )
+
+    return {
+        "run_id": config.run_id,
+        **run_metrics,
+        "mlflow_run_id": mlflow_run_id,
+    }
+
+
 def main(argv: list[str] | None = None) -> None:
     """Parse args, dispatch, print the one-line JSON result."""
     try:  # optional convenience: pick up .env when run from the project root
@@ -85,10 +109,7 @@ def main(argv: list[str] | None = None) -> None:
     elif args.command == "summarize":
         paths = _paths_from(args.run_dir)
         config = load_config(paths)
-        run_metrics = metrics.collect_metrics(paths)
-        metrics.write_metrics(paths, run_metrics)
-        write_manifest(paths, build_manifest(paths, remote_uri=""))
-        result = {"run_id": config.run_id, **run_metrics}
+        result = _summarize(config, paths)
     else:  # pragma: no cover - argparse enforces the choices
         raise SystemExit(f"unknown command {args.command!r}")
 

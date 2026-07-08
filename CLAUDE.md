@@ -122,10 +122,10 @@ production polish; J–K are evidence and writeup.
 **Concept:** experiment tracking — params/metrics/artifact-refs as the queryable comparison layer.
 **Outcome:** every pipeline run appears in MLflow; two runs comparable side by side. SPEC Area 3 done.
 
-- [ ] **F.1** Run a local server: `uv run mlflow server --port 5000 --backend-store-uri sqlite:///mlflow.db`
-- [ ] **F.2** `tracking.py`: `log_run()` — find-or-create by `run_id` tag (idempotent retries, PLAN §6; verified same mlflow_run_id on re-run)
-- [ ] **F.3** Wire into `summarize`; env contract `MLFLOW_TRACKING_URI`, `MLFLOW_EXPERIMENT_NAME`
-- [ ] **F.4** Three runs logged (slices 0:1, 0:2, 2:3; rates 1.0/0.5/1.0) → comparable in the UI (SPEC 3.4)
+- [x] **F.1** Run a local server: `uv run mlflow server --port 5000 --backend-store-uri sqlite:///mlflow.db` *(macOS: browse via 127.0.0.1 — AirPlay owns localhost:5000)*
+- [x] **F.2** `tracking.py`: `log_run()` — find-or-create by `run_id` tag (idempotent retries, PLAN §6; verified same mlflow_run_id on re-run)
+- [x] **F.3** Wire into `summarize`; env contract `MLFLOW_TRACKING_URI`, `MLFLOW_EXPERIMENT_NAME`
+- [x] **F.4** Three runs logged (slices 0:1, 0:2, 2:3; rates 1.0/0.5/1.0) → comparable in the UI (SPEC 3.4)
 - **Learn:** MLflow experiments/runs/tags, params vs metrics vs artifacts, logging references instead of copies, idempotent logging
 
 ---
