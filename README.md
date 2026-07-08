@@ -64,12 +64,24 @@ MLflow. Full diagrams, dependency rules, and walkthroughs: [PLAN.md](PLAN.md).
 
 ## Example Usage
 
-<!-- TODO(Block K): real run — params in, metrics out, MLflow compare screenshot -->
+A real UI-triggered run (`split=test subset=verified workers=2 task_slice=0:2`):
 
 ```text
-Trigger: split=test subset=verified workers=4 task_slice=0:3
-Result:  3 submitted · 3 completed · 1 resolved · resolve_rate 0.33
-         runs/20260702T142530__verified__0-3/ → s3://runs/... → MLflow run
+Trigger: split=test subset=verified workers=2 task_slice=0:2
+Result:  2 submitted · 2 completed · 1 resolved · resolve_rate 0.5
+         runs/20260707T221722__verified__0-2/ → s3://runs/20260707T221722__verified__0-2/
+         → MLflow run tagged run_id=20260707T221722__verified__0-2
+```
+
+Every step is also runnable directly (same code path the DAG uses):
+
+```bash
+uv run python -m pipeline.cli prepare-run --task-slice 0:2 --workers 2
+uv run python -m pipeline.cli run-agent  --run-dir runs/<id>
+uv run python -m pipeline.cli run-eval   --run-dir runs/<id>
+uv run python -m pipeline.cli summarize  --run-dir runs/<id>
+
+uv run pytest   # unit tests for the pure layers
 ```
 
 ## Project Structure

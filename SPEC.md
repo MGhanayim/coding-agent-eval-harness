@@ -143,21 +143,21 @@ Production-style additions:
 
 Pre-submission — every box maps to an ID above:
 
-- [ ] 1.1.1 DAG exposes `split`, `subset`, `workers` params with defaults
-- [ ] 1.1.2 DAG exposes `model`, `task_slice`, `run_id`, `cost_limit`; blank values auto-resolve
-- [ ] 1.1.3 No experiment values hard-coded outside param defaults (grep verified)
-- [ ] 1.2.1–1.2.4 Four tasks exist and are named/ordered `prepare_run → run_agent → run_eval → summarize_and_log`
-- [ ] 1.2.5 Two UI-triggered runs with different params both succeed with separate run dirs
-- [ ] 2.1 Run tree matches the required shape exactly
-- [ ] 2.2 A teammate can reconstruct the run from the folder alone (dry-run passed on an S3-downloaded copy)
-- [ ] 2.3 `manifest.json` lists key files + remote artifact URI
-- [ ] 2.4 Run folder uploaded to MinIO/S3; URI in manifest + MLflow
-- [ ] 3.1–3.3 MLflow run has params, metrics, artifact reference
-- [ ] 3.4 Two runs comparable in MLflow UI (3 runs logged: rates 1.0 / 0.5 / 1.0)
-- [ ] 3.5 Logging happens inside `summarize_and_log`
-- [ ] 4.1–4.3 `run_agent`/`run_eval` run via DockerOperator; eval spawns per-instance sibling containers (observed live under compose)
-- [ ] 5.1–5.3 `docker compose up` brings up Airflow + MLflow + MinIO; DAG reaches both by service name
+- [x] 1.1.1 DAG exposes `split`, `subset`, `workers` params with defaults
+- [x] 1.1.2 DAG exposes `model`, `task_slice`, `run_id`, `cost_limit`; blank values auto-resolve
+- [x] 1.1.3 No experiment values hard-coded outside param defaults (grep verified)
+- [x] 1.2.1–1.2.4 Four tasks exist and are named/ordered `prepare_run → run_agent → run_eval → summarize_and_log`
+- [x] 1.2.5 Two UI-triggered runs with different params both succeed with separate run dirs *(0:2/w2 + 2:3/w1, 2026-07-07)*
+- [x] 2.1 Run tree matches the required shape exactly
+- [x] 2.2 A teammate can reconstruct the run from the folder alone (dry-run passed on an S3-downloaded copy)
+- [x] 2.3 `manifest.json` lists key files + remote artifact URI
+- [x] 2.4 Run folder uploaded to MinIO/S3; URI in manifest + MLflow
+- [x] 3.1–3.3 MLflow run has params, metrics, artifact reference
+- [x] 3.4 Two runs comparable in MLflow UI (3 runs logged: rates 1.0 / 0.5 / 1.0)
+- [x] 3.5 Logging happens inside `summarize_and_log`
+- [x] 4.1–4.3 `run_agent`/`run_eval` run via DockerOperator; eval spawns per-instance sibling containers (observed live under compose)
+- [x] 5.1–5.3 `docker compose up` brings up Airflow + MLflow + MinIO; DAG reaches both by service name
 - [ ] 6.1 `REPORT.md` complete (drafted — final numbers + screenshots after the VM run, Block J)
-- [ ] 6.2 At least one real completed evaluation (several: local CLI, standalone-Airflow, and compose runs with real metrics)
+- [x] 6.2 At least one real completed evaluation (several: local CLI, standalone-Airflow, and compose runs with real metrics)
 - [ ] 6.3 Three screenshots committed (Block J, on the VM)
-- [ ] C1–C6 All cross-cutting constraints hold (grep for hard-codes; `.gitignore` covers secrets + runtime output; retries/timeouts set per PLAN §6)
+- [x] C1–C6 All cross-cutting constraints hold (grep for hard-codes; `.gitignore` covers secrets + runtime output; retries/timeouts set per PLAN §6)
