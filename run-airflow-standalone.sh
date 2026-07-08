@@ -8,4 +8,6 @@ mkdir -p $AIRFLOW_HOME
 
 echo '{"admin": "admin"}' > $AIRFLOW_HOME/simple_auth_manager_passwords.json.generated
 
-uv tool run apache-airflow standalone
+# --with adds the Docker provider so EXECUTION_MODE=docker (Block H) parses;
+# harmless in the default subprocess mode.
+uv tool run --with apache-airflow-providers-docker apache-airflow standalone

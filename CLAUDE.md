@@ -146,11 +146,11 @@ production polish; J–K are evidence and writeup.
 **Concept:** same CLI, different executor — containers as reproducible task environments.
 **Outcome:** `run_agent`/`run_eval` run in the project image from standalone Airflow. SPEC Area 4 done.
 
-- [ ] **H.1** Extend `Dockerfile`: `COPY pipeline pipeline/` (+ `.python-version`); build `coding-agent-eval-harness:latest` (2 GB)
-- [ ] **H.2** Docker provider: `--with apache-airflow-providers-docker` in standalone script; built into the compose image
-- [ ] **H.3** `EXECUTION_MODE=docker` switch: `run_agent`/`run_eval`/`summarize_and_log` become DockerOperators (same CLI commands; env passthrough via `TASK_ENV_KEYS`)
-- [ ] **H.4** Mount `runs/` (host path!) and `/var/run/docker.sock`; sibling eval containers observed live
-- [ ] **H.5** Full run through Docker tasks (combined with I.5); identical run-dir shape confirmed
+- [x] **H.1** Extend `Dockerfile`: `COPY pipeline pipeline/` (+ `.python-version`); build `coding-agent-eval-harness:latest` (2 GB)
+- [x] **H.2** Docker provider: `--with apache-airflow-providers-docker` in standalone script; built into the compose image
+- [x] **H.3** `EXECUTION_MODE=docker` switch: `run_agent`/`run_eval`/`summarize_and_log` become DockerOperators (same CLI commands; env passthrough via `TASK_ENV_KEYS`)
+- [x] **H.4** Mount `runs/` (host path!) and `/var/run/docker.sock`; sibling eval containers observed live
+- [x] **H.5** Full run through Docker tasks (combined with I.5); identical run-dir shape confirmed
 - **Learn:** DockerOperator (image/command/mounts/env), docker-out-of-docker vs docker-in-docker, host-path vs container-path for bind mounts
 
 ---

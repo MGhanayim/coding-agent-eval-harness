@@ -13,12 +13,14 @@ WORKDIR /mlops-assignment
 
 COPY pyproject.toml .
 COPY uv.lock .
+COPY .python-version .
 
 RUN uv sync --locked
 
 ENV PATH="/mlops-assignment/.venv/bin:$PATH"
 
 COPY scripts scripts/
+COPY pipeline pipeline/
 
 # Optional but useful if your script lacks executable bit or shebang issues:
 RUN chmod +x scripts/*.sh
