@@ -172,11 +172,11 @@ production polish; J–K are evidence and writeup.
 **Concept:** shipping to the target environment and producing graded evidence.
 **Outcome:** completed real batch on the Nebius VM; three screenshots. SPEC 6.2–6.3 done.
 
-- [ ] **J.1** Provision VM per ASSIGNMENT.md prereqs (8 CPU / 32 GB, Docker, uv); clone repo, `.env`
-- [ ] **J.2** `docker compose up -d`; SSH port-forward 8080 (Airflow) + 5000 (MLflow) + 9001 (MinIO)
-- [ ] **J.3** Trigger a real batch (e.g. `task_slice 0:10`, `workers 4+`); watch task logs
-- [ ] **J.4** Capture `screenshots/airflow_dag.png`, `mlflow_runs.png`, `object_storage_artifacts.png`
-- [ ] **J.5** Commit one sample `runs/<run-id>/` manifest (or trimmed folder) as evidence
+- [x] **J.1** Provision VM per ASSIGNMENT.md prereqs (8 CPU / 32 GB, Docker, uv); clone repo, `.env` *(Nebius, non-GPU Intel Ice Lake, x86_64, 128GB SSD, static IP, only port 22 public)*
+- [x] **J.2** `docker compose up -d`; SSH port-forward 8080 (Airflow) + 5000→5002 (MLflow, AirPlay dodge) + 9001 (MinIO) *(all 7 services healthy)*
+- [x] **J.3** Trigger a real batch (e.g. `task_slice 0:10`, `workers 4+`); watch task logs *(`graded-batch-1`: 10/10 submitted, 6/10 resolved, resolve_rate 0.6 — real DockerOperator execution, ~50 min)*
+- [x] **J.4** Capture `screenshots/airflow_dag.png`, `mlflow_runs.png`, `object_storage_artifacts.png`
+- [x] **J.5** Commit one sample `runs/<run-id>/` manifest (or trimmed folder) as evidence *(full `graded-batch-1/` committed, ~20MB, SPEC 2.1 shape intact)*
 - **Learn:** remote Docker ops, SSH tunneling, x86-only eval images (why the VM matters), sizing workers vs CPU
 
 ---

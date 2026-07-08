@@ -157,7 +157,7 @@ Pre-submission — every box maps to an ID above:
 - [x] 3.5 Logging happens inside `summarize_and_log`
 - [x] 4.1–4.3 `run_agent`/`run_eval` run via DockerOperator; eval spawns per-instance sibling containers (observed live under compose)
 - [x] 5.1–5.3 `docker compose up` brings up Airflow + MLflow + MinIO; DAG reaches both by service name
-- [ ] 6.1 `REPORT.md` complete (drafted — final numbers + screenshots after the VM run, Block J)
-- [x] 6.2 At least one real completed evaluation (several: local CLI, standalone-Airflow, and compose runs with real metrics)
-- [ ] 6.3 Three screenshots committed (Block J, on the VM)
+- [x] 6.1 `REPORT.md` complete (finalized with Block J's real VM run and screenshots)
+- [x] 6.2 At least one real completed evaluation (`graded-batch-1` on the Nebius VM: 10 instances, resolve_rate 0.6, plus earlier local CLI/standalone/compose runs)
+- [x] 6.3 Three screenshots committed (`screenshots/airflow_dag.png`, `mlflow_runs.png`, `object_storage_artifacts.png`)
 - [x] C1–C6 All cross-cutting constraints hold (grep for hard-codes; `.gitignore` covers secrets + runtime output; retries/timeouts set per PLAN §6)

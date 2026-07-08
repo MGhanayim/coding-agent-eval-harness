@@ -9,13 +9,14 @@
 ![MLflow](https://img.shields.io/badge/MLflow-3.14-0194E2?logo=mlflow)
 ![Docker](https://img.shields.io/badge/Docker-compose-2496ED?logo=docker)
 
-> 🚧 **In development** — built block by block; progress in [CLAUDE.md](CLAUDE.md).
-> This notice is removed when the pipeline is fully deployed.
-
 ## Demo
 
-<!-- TODO(Block K): screenshots/airflow_dag.png + mlflow_runs.png side by side -->
-*Screenshots coming after the first full deployment (see `screenshots/`).*
+Deployed to a Nebius VM under the full `docker-compose` stack; a real 10-instance graded
+batch resolved 6/10 (`resolve_rate 0.6`) — full evidence in [REPORT.md](REPORT.md) and
+[`runs/graded-batch-1/`](runs/graded-batch-1/).
+
+![Airflow: two independent successful runs](screenshots/airflow_dag.png)
+![MLflow: runs compared side by side](screenshots/mlflow_runs.png)
 
 ## What This Project Demonstrates
 

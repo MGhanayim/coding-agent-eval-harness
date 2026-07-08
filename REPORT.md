@@ -105,22 +105,29 @@ Verified reconstruction test (SPEC 2.2/2.4): the folder was downloaded back from
 (`nebius/moonshotai/Kimi-K2.6`), which slice (`0:1` of verified/test), the resolve rate
 (1.0), and where full artifacts live (the manifest's own S3 URI).
 
-## 4. Completed evaluation (analysis of one real run)
+## 4. Completed evaluation (real VM run — the graded evidence)
 
-Run `20260707T214048__verified__0-1` (smoke run, 1 instance, executed live):
+Run **`graded-batch-1`**, triggered on a Nebius VM (8 vCPU / 32 GB, x86_64) under the full
+docker-compose production stack (`EXECUTION_MODE=docker`, every step a `DockerOperator`
+container): `split=test, subset=verified, task_slice=0:10, workers=4, model=nebius/moonshotai/Kimi-K2.6`.
 
-- **Agent phase:** `astropy__astropy-12907` — the agent read the issue, localized
-  `astropy/modeling/separable.py`, produced a 504-char patch, and submitted after 24 LLM
-  calls (exit status `Submitted`).
-- **Eval phase:** the harness applied the patch in a fresh x86_64 instance container;
-  both `FAIL_TO_PASS` tests flipped green and all 13 `PASS_TO_PASS` regression tests held
-  → `"resolved": true`.
-- **Metrics:** `submitted 1 · completed 1 · resolved 1 · resolve_rate 1.0` — logged to
-  MLflow with the full parameter set, the local run path, and the S3 URI.
+- **Result:** `submitted 10 · completed 10 · resolved 6 · unresolved 4 · resolve_rate 0.6`
+  — a real, non-trivial outcome (not a cherry-picked single instance).
+- **Duration:** ~50 minutes end to end, `workers=4` confirmed genuinely parallel (multiple
+  `minisweagent-*` containers with distinct instance images running concurrently via
+  `docker ps`, not sequential).
+- **Variance observed:** most instances resolved within minutes; one (`astropy-13977`)
+  ground for 23+ minutes before finishing — the same long-tail behavior documented in
+  BREAKDOWN.md's runtime analysis, here reproduced at real batch scale.
+- The complete run — all 10 trajectories, eval logs, reports, `config.json`, `metrics.json`,
+  `manifest.json` — is committed at [`runs/graded-batch-1/`](runs/graded-batch-1/) as evidence
+  (SPEC 6.2), and was independently verified by uploading to MinIO and browsing the object
+  store directly (see screenshot below).
 
-A second DAG-triggered run (`task_slice 2:3`) resolved `astropy__astropy-13236` — an
-instance the reference sample had *unresolved*, a reminder that single-instance agent runs
-have high variance; resolve rates only stabilize over larger slices.
+An earlier smoke run (`20260707T214048__verified__0-1`, 1 instance, local) resolved
+`astropy__astropy-12907` with `resolve_rate 1.0` — useful for exercising the pipeline
+end-to-end quickly, but `graded-batch-1` is the run that demonstrates real variance and a
+believable resolve rate.
 
 ## 5. MLflow evidence
 
@@ -128,10 +135,12 @@ Every pipeline run appears in experiment `swe-bench-evals`, tagged `run_id=<run-
 with params (split/subset/model/slice/workers/cost_limit + package versions), metrics
 (submitted/completed/resolved/unresolved/error counts + resolve_rate), and artifact
 references (local path + S3 URI as tags). Runs are compared side by side in the UI via
-checkbox → Compare.
+checkbox → Compare — `screenshots/mlflow_runs.png` shows `graded-batch-1` (resolve_rate 0.6)
+next to the earlier sanity check (resolve_rate 1.0) in the same comparison view.
 
-<!-- TODO(Block J): screenshots/mlflow_runs.png + airflow_dag.png + object_storage_artifacts.png -->
-*Screenshots from the VM deployment land in `screenshots/` (Block J).*
+![Airflow: two independent successful runs](screenshots/airflow_dag.png)
+![MLflow: runs compared side by side](screenshots/mlflow_runs.png)
+![MinIO: the uploaded run's SPEC 2.1 shape](screenshots/object_storage_artifacts.png)
 
 ## 6. Deployment modes
 
