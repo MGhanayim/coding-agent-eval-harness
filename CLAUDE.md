@@ -134,10 +134,10 @@ production polish; J–K are evidence and writeup.
 **Concept:** durable artifacts via the S3 API; MinIO locally, Nebius Object Storage in prod — same boto3 code.
 **Outcome:** run folders land in `s3://runs/<run-id>/`; URI in manifest + MLflow. SPEC 2.4 done.
 
-- [ ] **G.1** MinIO via `docker run` (ports 9000/9001); create the `runs` bucket
-- [ ] **G.2** `storage.py`: client from env (`AWS_ENDPOINT_URL` — the swappability trick), `upload_run_dir()`
-- [ ] **G.3** Order-of-operations in `summarize`: manifest gets the *planned* URI before upload (PLAN §6)
-- [ ] **G.4** Downloaded the folder from MinIO (`download_run_dir()`); SPEC 2.2 reconstruction passed on the copy
+- [x] **G.1** MinIO via `docker run` (ports 9000/9001); create the `runs` bucket
+- [x] **G.2** `storage.py`: client from env (`AWS_ENDPOINT_URL` — the swappability trick), `upload_run_dir()`
+- [x] **G.3** Order-of-operations in `summarize`: manifest gets the *planned* URI before upload (PLAN §6)
+- [x] **G.4** Downloaded the folder from MinIO (`download_run_dir()`); SPEC 2.2 reconstruction passed on the copy
 - **Learn:** S3 object model (no real directories), boto3 upload patterns, endpoint-based portability, why manifest-before-upload
 
 ---

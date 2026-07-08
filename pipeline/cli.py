@@ -61,25 +61,33 @@ def _paths_from(run_dir: str) -> RunPaths:
 
 
 def _summarize(config, paths: RunPaths) -> dict:
-    """The summarize_and_log step: metrics → manifest → MLflow logging.
-    MLflow is env-gated (MLFLOW_TRACKING_URI): unset means skipped, so the
-    CLI stays runnable before the service exists. S3 upload lands in
-    Block G; remote_uri stays empty until then."""
-    from pipeline import tracking  # heavy import, summarize-only
+    """The summarize_and_log step, strictly ordered per PLAN §6:
+    metrics → manifest (with the *planned* S3 URI) → upload → MLflow.
+    The URI is computed before upload so the manifest inside the uploaded
+    copy already points at itself. Storage and tracking are env-gated
+    (AWS_ENDPOINT_URL / MLFLOW_TRACKING_URI): unset means skipped, so the
+    CLI stays runnable before those services exist. Retries are idempotent:
+    S3 overwrites, MLflow finds-or-creates by run_id tag."""
+    from pipeline import storage, tracking  # heavy imports, summarize-only
 
     run_metrics = metrics.collect_metrics(paths)
     metrics.write_metrics(paths, run_metrics)
-    write_manifest(paths, build_manifest(paths, remote_uri=""))
+
+    remote_uri = storage.planned_uri(config.run_id) if storage.storage_enabled() else ""
+    write_manifest(paths, build_manifest(paths, remote_uri))
+    if remote_uri:
+        storage.upload_run_dir(paths)
 
     mlflow_run_id = ""
     if tracking.tracking_uri():
         mlflow_run_id = tracking.log_run(
-            config, run_metrics, artifact_uri="", local_path=str(paths.root)
+            config, run_metrics, artifact_uri=remote_uri, local_path=str(paths.root)
         )
 
     return {
         "run_id": config.run_id,
         **run_metrics,
+        "remote_artifact_uri": remote_uri,
         "mlflow_run_id": mlflow_run_id,
     }
 
