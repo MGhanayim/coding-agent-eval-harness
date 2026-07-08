@@ -108,12 +108,12 @@ production polish; J–K are evidence and writeup.
 **Concept:** Airflow 3 params, TaskFlow, XCom, retries/timeouts — one button runs the whole pipeline.
 **Outcome:** `dags/evaluate_agent.py`; a UI-triggered 3-instance run produces a complete run dir. SPEC Area 1 done.
 
-- [ ] **E.1** `Param` declarations built from `PARAM_DEFAULTS` (import Layer 0 only — PLAN §2!)
-- [ ] **E.2** `prepare_run` task: subprocess the CLI, parse `run_id` from stdout, push via XCom
-- [ ] **E.3** `run_agent` / `run_eval` / `summarize_and_log` tasks consuming the XCom `run_id`
-- [ ] **E.4** Retries + timeouts per PLAN §6 (SPEC C3)
-- [ ] **E.5** Trigger twice with different params → two independent run dirs (SPEC 1.2.5)
-- [ ] **E.6** Grep the DAG for hard-coded experiment values (SPEC 1.1.3)
+- [x] **E.1** `Param` declarations built from `PARAM_DEFAULTS` (import Layer 0 only — PLAN §2!)
+- [x] **E.2** `prepare_run` task: subprocess the CLI, parse `run_id` from stdout, push via XCom *(gotcha: `run_id` is a reserved TaskFlow kwarg → `pipeline_run_id`)*
+- [x] **E.3** `run_agent` / `run_eval` / `summarize_and_log` tasks consuming the XCom `run_id`
+- [x] **E.4** Retries + timeouts per PLAN §6 (SPEC C3) *(a real zombie task got auto-retried and the retry resumed the batch — policy verified live)*
+- [x] **E.5** Trigger twice with different params → two independent run dirs (SPEC 1.2.5) *(0:2/w2 + 2:3/w1, both success, workers interleaving confirmed)*
+- [x] **E.6** Grep the DAG for hard-coded experiment values (SPEC 1.1.3) *(clean)*
 - **Learn:** `@dag`/`@task`, `Param` + trigger form, XCom mechanics, retry/timeout semantics, why the DAG imports almost nothing
 
 ---
