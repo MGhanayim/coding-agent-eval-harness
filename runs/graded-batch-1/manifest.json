@@ -1,0 +1,14 @@
+{
+  "run_id": "graded-batch-1",
+  "config": "config.json",
+  "metrics": "metrics.json",
+  "predictions": "run-agent/preds.json",
+  "trajectories": "run-agent/trajectories/",
+  "eval_logs": "run-eval/logs/",
+  "eval_reports": "run-eval/reports/",
+  "remote_artifact_uri": "s3://runs/graded-batch-1/",
+  "mlflow": {
+    "tracking_uri": "http://mlflow:5000",
+    "experiment": "swe-bench-evals"
+  }
+}
