@@ -1,0 +1,30 @@
+# Python
+__pycache__
+*.py[cod]
+.ruff_cache
+.pytest_cache
+.mypy_cache
+.venv
+*.egg-info/
+
+# Secrets
+.env
+
+# Runtime output — commit only a curated sample run via `git add -f runs/<run-id>` if small
+/runs/
+/trajectories/
+/trajectory.json
+/logs/
+mlruns/
+mlartifacts/
+minio-data/
+
+# Upstream reference clones (see ASSIGNMENT.md prerequisites)
+mini-swe-agent/
+SWE-bench/
+
+# Original assignment text — local reference only, not part of the portfolio repo
+ASSIGNMENT.md
+
+# OS
+.DS_Store
