@@ -11,8 +11,14 @@ import json
 import sys
 from pathlib import Path
 
-from pipeline import agent_runner, evaluator
-from pipeline.artifacts import RunPaths, init_run_dir, load_config
+from pipeline import agent_runner, evaluator, metrics
+from pipeline.artifacts import (
+    RunPaths,
+    build_manifest,
+    init_run_dir,
+    load_config,
+    write_manifest,
+)
 from pipeline.config import PARAM_DEFAULTS, resolve_config
 
 
@@ -42,6 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
     for name, help_text in (
         ("run-agent", "run the mini-swe-agent batch for a prepared run"),
         ("run-eval", "run the SWE-bench harness on the run's predictions"),
+        ("summarize", "write metrics.json + manifest.json for a completed run"),
     ):
         step = subparsers.add_parser(name, help=help_text)
         step.add_argument("--run-dir", required=True, help="runs/<run-id> directory")
@@ -75,6 +82,13 @@ def main(argv: list[str] | None = None) -> None:
     elif args.command == "run-eval":
         paths = _paths_from(args.run_dir)
         result = evaluator.run_eval(load_config(paths), paths)
+    elif args.command == "summarize":
+        paths = _paths_from(args.run_dir)
+        config = load_config(paths)
+        run_metrics = metrics.collect_metrics(paths)
+        metrics.write_metrics(paths, run_metrics)
+        write_manifest(paths, build_manifest(paths, remote_uri=""))
+        result = {"run_id": config.run_id, **run_metrics}
     else:  # pragma: no cover - argparse enforces the choices
         raise SystemExit(f"unknown command {args.command!r}")
 

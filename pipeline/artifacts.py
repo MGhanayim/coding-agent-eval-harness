@@ -14,6 +14,8 @@ SPEC 2.1 shape:
 """
 from __future__ import annotations
 
+import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -93,3 +95,37 @@ def init_run_dir(config: RunConfig, root: Path | None = None) -> RunPaths:
 def load_config(paths: RunPaths) -> RunConfig:
     """Read back the frozen config that governs this run."""
     return RunConfig.from_json(paths.config_path.read_text())
+
+
+def build_manifest(paths: RunPaths, remote_uri: str = "") -> dict:
+    """The "send this folder to a teammate" index (SPEC 2.3, PLAN §7).
+
+    Entries are run-dir-relative and derived from RunPaths, so the manifest
+    can never disagree with the actual layout. `remote_uri` is the *planned*
+    S3 destination — written before upload so the uploaded copy already
+    points at itself (PLAN §6); empty until Block G wires storage in.
+    """
+
+    def rel(path: Path, trailing_slash: bool = False) -> str:
+        value = str(path.relative_to(paths.root))
+        return value + "/" if trailing_slash else value
+
+    return {
+        "run_id": paths.run_id,
+        "config": rel(paths.config_path),
+        "metrics": rel(paths.metrics_path),
+        "predictions": rel(paths.preds_path),
+        "trajectories": rel(paths.trajectories_dir, trailing_slash=True),
+        "eval_logs": rel(paths.eval_logs_dir, trailing_slash=True),
+        "eval_reports": rel(paths.eval_reports_dir, trailing_slash=True),
+        "remote_artifact_uri": remote_uri,
+        "mlflow": {
+            "tracking_uri": os.environ.get("MLFLOW_TRACKING_URI", ""),
+            "experiment": os.environ.get("MLFLOW_EXPERIMENT_NAME", ""),
+        },
+    }
+
+
+def write_manifest(paths: RunPaths, manifest: dict) -> None:
+    """Persist manifest.json at the run root (SPEC 2.1)."""
+    paths.manifest_path.write_text(json.dumps(manifest, indent=2))

@@ -96,10 +96,10 @@ production polish; J–K are evidence and writeup.
 **Concept:** anatomy of SWE-bench evaluation output; turning reports into comparable numbers.
 **Outcome:** `summarize` subcommand writes `metrics.json` + `manifest.json` (no MLflow/S3 yet).
 
-- [ ] **D.1** `metrics.py`: parse the harness summary JSON (see `sample/nebius__moonshotai__Kimi-K2.6.test.json`), derive `resolve_rate`
-- [ ] **D.2** `artifacts.py`: `build_manifest()` per PLAN §7 (remote URI empty for now)
-- [ ] **D.3** `summarize` subcommand wiring metrics + manifest
-- [ ] **D.4** Pass the SPEC 2.2 test: reconstruct your smoke run from the folder alone
+- [x] **D.1** `metrics.py`: parse the harness summary JSON (see `sample/nebius__moonshotai__Kimi-K2.6.test.json`), derive `resolve_rate`
+- [x] **D.2** `artifacts.py`: `build_manifest()` per PLAN §7 (remote URI empty for now)
+- [x] **D.3** `summarize` subcommand wiring metrics + manifest
+- [x] **D.4** Pass the SPEC 2.2 test: reconstruct your smoke run from the folder alone
 - **Learn:** resolved vs completed vs submitted, FAIL_TO_PASS / PASS_TO_PASS semantics, manifest-as-index pattern
 
 ---
