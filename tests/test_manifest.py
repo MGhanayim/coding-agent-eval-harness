@@ -34,3 +34,14 @@ def test_manifest_reads_mlflow_env_contract(tmp_path, monkeypatch):
         "tracking_uri": "http://mlflow:5000",
         "experiment": "swe-bench-evals",
     }
+
+
+def test_manifest_experiment_matches_tracking_default(tmp_path, monkeypatch):
+    # With the name unset, the manifest must record the SAME experiment
+    # tracking.log_run would actually use — not "" (SPEC 2.3 pointer).
+    monkeypatch.delenv("MLFLOW_EXPERIMENT_NAME", raising=False)
+    from pipeline.tracking import experiment_name
+
+    paths = init_run_dir(resolve_config(now=FIXED_NOW), root=tmp_path)
+    manifest = build_manifest(paths)
+    assert manifest["mlflow"]["experiment"] == experiment_name()

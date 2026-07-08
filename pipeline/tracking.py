@@ -10,24 +10,20 @@ duplicate MLflow runs, so log_run() searches for an existing run tagged
 from __future__ import annotations
 
 import dataclasses
-import os
 
 import mlflow
 
-from pipeline.config import RunConfig
+from pipeline.config import RunConfig, mlflow_experiment_name, mlflow_tracking_uri
 
-
-def tracking_uri() -> str | None:
-    """MLFLOW_TRACKING_URI, or None when tracking is not configured."""
-    return os.environ.get("MLFLOW_TRACKING_URI") or None
-
-
-def experiment_name() -> str:
-    return os.environ.get("MLFLOW_EXPERIMENT_NAME", "swe-bench-evals")
+# Shared Layer-0 accessors — same defaults as the manifest, by construction.
+tracking_uri = mlflow_tracking_uri
+experiment_name = mlflow_experiment_name
 
 
 def _find_existing_run(run_id: str) -> str | None:
-    """Return the MLflow run id already tagged with our pipeline run_id."""
+    """Return the MLflow run id already tagged with our pipeline run_id.
+    run_id is safe to interpolate: resolve_config enforces RUN_ID_PATTERN
+    (no quotes or filter metacharacters)."""
     hits = mlflow.search_runs(
         filter_string=f"tags.run_id = '{run_id}'", output_format="list"
     )

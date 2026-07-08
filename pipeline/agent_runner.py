@@ -6,29 +6,32 @@ effects: subprocess, output relocation, validation.
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
+import shutil
 import subprocess
 import sys
 
 from pipeline.artifacts import RunPaths
-from pipeline.config import RunConfig
+from pipeline.config import RunConfig, collect_package_versions
 
 
 def build_agent_command(config: RunConfig, paths: RunPaths) -> list[str]:
     """Translate a RunConfig into the `mini-extra swebench` argv.
 
     Mirrors scripts/mini-swe-bench-batch.sh, minus its repo-checkout --config
-    path: with no -c flag, mini-extra falls back to the swebench.yaml packaged
-    inside the installed mini-swe-agent — reference-only upstreams (SPEC C4).
+    path: `-c swebench.yaml` resolves to the copy packaged inside the
+    installed mini-swe-agent — reference-only upstreams (SPEC C4).
 
-    cost_limit rides in as a config override (the batch CLI has no dedicated
-    flag). 0 means "no cost ceiling" and is omitted entirely. Note: with
-    providers litellm has no pricing table for (e.g. Kimi via Nebius), cost
-    tracking reports $0 and the ceiling never triggers — the step limit is
-    the real bound (see BREAKDOWN "Pipeline Runtime").
+    cost_limit is ALWAYS passed explicitly. The packaged swebench.yaml sets
+    its own agent.cost_limit (3.0), so omitting the override would silently
+    re-enable a $3 ceiling; mini-swe-agent's check is `0 < cost_limit <= cost`,
+    so an explicit 0 genuinely disables it. (With providers litellm has no
+    pricing for — e.g. Kimi via Nebius — tracked cost stays $0 and no ceiling
+    triggers either way; the step limit is the real bound there.)
     """
-    command = [
+    return [
         "mini-extra", "swebench",
         "--subset", config.subset,
         "--split", config.split,
@@ -36,21 +39,36 @@ def build_agent_command(config: RunConfig, paths: RunPaths) -> list[str]:
         "--slice", config.task_slice,
         "--workers", str(config.workers),
         "-o", str(paths.trajectories_dir),
+        "-c", "swebench.yaml",
+        "-c", f"agent.cost_limit={config.cost_limit}",
     ]
-    if config.cost_limit > 0:
-        command += ["-c", "swebench.yaml", "-c", f"agent.cost_limit={config.cost_limit}"]
-    return command
+
+
+def refresh_package_versions(config: RunConfig, paths: RunPaths) -> RunConfig:
+    """Re-record package versions from THIS environment when config.json
+    carries "unknown" values. prepare-run may execute where the agent/harness
+    packages aren't installed (the bare Airflow image under compose); the
+    execution env is the authority, so provenance is corrected here before
+    anything downstream consumes it (SPEC 2.2)."""
+    if all(v != "unknown" for v in config.package_versions.values()):
+        return config
+    fixed = dataclasses.replace(config, package_versions=collect_package_versions())
+    paths.config_path.write_text(fixed.to_json())
+    return fixed
 
 
 def relocate_preds(paths: RunPaths) -> None:
-    """Move preds.json out of trajectories/ up to run-agent/preds.json.
+    """Copy preds.json from trajectories/ up to run-agent/preds.json.
 
     mini-extra writes predictions *inside* its -o directory; the SPEC 2.1
-    contract wants them beside trajectories/, not among them (PLAN §8 W1).
+    contract wants them beside trajectories/ (PLAN §8 W1). It is a COPY,
+    not a move: mini-extra's resume/skip logic reads <output>/preds.json,
+    so removing it would turn every re-run into a full-price redo of the
+    whole batch.
     """
-    misplaced = paths.trajectories_dir / "preds.json"
-    if misplaced.exists():
-        misplaced.replace(paths.preds_path)
+    source = paths.trajectories_dir / "preds.json"
+    if source.exists():
+        shutil.copy2(source, paths.preds_path)
 
 
 def validate_preds(paths: RunPaths) -> int:
@@ -75,6 +93,7 @@ def run_agent(config: RunConfig, paths: RunPaths) -> dict:
     """Run the agent batch; relocate + validate outputs. Returns a small
     result dict for the CLI to print. Tool output is routed to stderr so the
     CLI's stdout stays a parseable one-line JSON contract."""
+    config = refresh_package_versions(config, paths)
     env = {**os.environ, "MSWEA_COST_TRACKING": "ignore_errors"}
     subprocess.run(
         build_agent_command(config, paths),

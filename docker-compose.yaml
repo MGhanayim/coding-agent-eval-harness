@@ -34,7 +34,10 @@ x-airflow-common:
     PIPELINE_PYTHON: python          # prepare-run is stdlib-only; no uv here
     TASK_IMAGE: ${TASK_IMAGE:-coding-agent-eval-harness:latest}
     TASK_NETWORK_MODE: coding-agent-eval-harness_default
-    HOST_PROJECT_DIR: ${HOST_PROJECT_DIR}
+    # :? = fail at compose-up with a clear message instead of mounting a
+    # phantom path deep inside a paid run (PLAN §8 W3).
+    HOST_PROJECT_DIR: ${HOST_PROJECT_DIR:?Set HOST_PROJECT_DIR in .env to the absolute HOST path of this repo}
+    HOST_RUNS_DIR: ${HOST_RUNS_DIR:-}
     # In-network service endpoints override the laptop-oriented values that
     # env_file may carry (environment: wins over env_file).
     MLFLOW_TRACKING_URI: http://mlflow:5000
@@ -52,7 +55,9 @@ x-airflow-common:
     - /var/run/docker.sock:/var/run/docker.sock
   user: "${AIRFLOW_UID:-50000}:0"
   group_add:
-    - "${DOCKER_GID:-0}"
+    # Required so DockerOperator can use the mounted socket. macOS: 0.
+    # Linux: the docker group's gid — `getent group docker | cut -d: -f3`.
+    - "${DOCKER_GID:?Set DOCKER_GID in .env — macOS 0, Linux the docker group gid}"
   depends_on:
     &airflow-common-depends-on
     postgres:

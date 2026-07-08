@@ -58,6 +58,17 @@ def test_explicit_run_id_wins():
     assert config.run_id == "my-rerun"
 
 
+@pytest.mark.parametrize(
+    "bad_id",
+    ["bob's-run", "exp[1]", "a/b", "a b", "*", "", ".hidden" + "x" * 130],
+)
+def test_hostile_run_ids_rejected(bad_id):
+    # run_id feeds paths, glob patterns, MLflow filters, and S3 keys —
+    # only slug characters are allowed.
+    with pytest.raises(ValueError, match="invalid run_id"):
+        resolve_config(run_id=bad_id, now=FIXED_NOW)
+
+
 def test_dataset_name_derived_from_subset():
     config = resolve_config({"subset": "lite"}, now=FIXED_NOW)
     assert config.dataset_name == SUBSET_DATASETS["lite"]

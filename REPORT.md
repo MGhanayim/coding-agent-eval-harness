@@ -152,19 +152,33 @@ Same DAG file, same CLI, same artifact tree in both.
 - **MLflow 3.x rejects unknown Host headers** (DNS-rebinding protection, also a 403 —
   a *different* 403 on the same port). In-network clients arrive as `mlflow:5000`, so the
   compose service sets `MLFLOW_SERVER_ALLOWED_HOSTS=mlflow:5000,...`.
-- **`run_id` is a reserved TaskFlow parameter name** — task functions use
-  `pipeline_run_id`.
-- **mini-swe-agent writes `preds.json` inside its output dir** — `run_agent()` relocates
-  it to `run-agent/preds.json` to keep the SPEC 2.1 shape.
+- **`run_id` is a reserved TaskFlow parameter name** — task functions avoid it; task
+  data flows as a `{run_id, run_dir}` XCom dict.
+- **mini-swe-agent writes `preds.json` inside its output dir** — `run_agent()` *copies*
+  it to `run-agent/preds.json` for the SPEC 2.1 shape. It is a copy, not a move: the
+  original is mini-extra's resume marker, so removing it would re-run the whole batch.
 - **The harness writes relative to cwd** — `run_eval()` runs it with `cwd=run-eval/` and
   reshapes `logs/run_evaluation/<rid>/<model>/<iid>/` → `logs/<iid>/`.
-- **cost_limit is a no-op for Kimi-via-Nebius** (litellm has no pricing entry → tracked
-  cost stays $0; `MSWEA_COST_TRACKING=ignore_errors` required). The real bound is the
-  agent's step limit.
-- **Zombie tasks get retried correctly**: a run_agent supervisor died mid-batch during
-  development; Airflow's heartbeat detection marked it `UP_FOR_RETRY`, and the retry
-  skipped already-completed instances (mini-swe-agent resumes) — the retry policy is not
-  decorative.
+- **`cost_limit=0` does NOT mean "unlimited"** — the packaged `swebench.yaml` sets its own
+  `agent.cost_limit` (3.0), so the value is *always* passed explicitly (`agent.cost_limit=0`
+  genuinely disables the ceiling, since the check is `0 < cost_limit <= cost`). Separately,
+  cost tracking is a no-op for Kimi-via-Nebius (litellm has no pricing entry → tracked cost
+  stays $0), so the step limit is the effective bound there regardless.
+- **Retries must be idempotent, because they re-run over a populated run dir.** `run_eval`
+  relocation overwrites (never `rename`s onto a non-empty dir → no `ENOTEMPTY`) and clears
+  stale `sweb.eval.<iid>.<run_id>` containers first; `_cli` runs each step in its own
+  process group and SIGKILLs the whole group on timeout so no orphan batch races the retry.
+- **`run_id` reaches paths, globs, MLflow filters, and S3 keys** — `resolve_config`
+  restricts explicit ids to a safe slug (`RUN_ID_PATTERN`), so no sink needs escaping.
+- **Docker-mode env passthrough forwards only non-empty values** — an empty string would
+  override the in-code defaults (`bucket_name()`, `experiment_name()`), so the DAG filters
+  them out and the two executor modes stay equivalent.
+- **`prepare-run` provenance** — under compose it runs on the bare Airflow image (no
+  agent/harness installed), so `run_agent` re-records package versions from the execution
+  env before `config.json` is consumed.
+- **Fail fast on the VM** — compose `:?` guards make missing `HOST_PROJECT_DIR`/`DOCKER_GID`
+  error at `compose up`, not deep inside a paid run (`DOCKER_GID=0` grants no socket access
+  on a Linux host).
 - **libraries print to stdout** (mlflow's "View run" banner) — the CLI redirects all
   in-process stdout to stderr and emits exactly one JSON line on the real stdout, because
   the DAG parses it.

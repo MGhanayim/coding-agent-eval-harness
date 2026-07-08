@@ -7,7 +7,9 @@ This module is the only place services are imported and composed (PLAN §4).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -19,7 +21,7 @@ from pipeline.artifacts import (
     load_config,
     write_manifest,
 )
-from pipeline.config import PARAM_DEFAULTS, resolve_config
+from pipeline.config import PARAM_DEFAULTS, RunConfig, resolve_config
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -42,7 +44,10 @@ def build_parser() -> argparse.ArgumentParser:
             help=f"default: {default}",
         )
     prepare.add_argument(
-        "--run-id", default=None, help="override the generated run id (reruns)"
+        "--run-id",
+        default=None,
+        help="explicit run id — must be UNUSED; for reruns pick a fresh "
+        "suffix, e.g. <old-id>-rerun",
     )
 
     for name, help_text in (
@@ -60,7 +65,7 @@ def _paths_from(run_dir: str) -> RunPaths:
     return RunPaths(root=Path(run_dir).resolve())
 
 
-def _summarize(config, paths: RunPaths) -> dict:
+def _summarize(config: RunConfig, paths: RunPaths) -> dict:
     """The summarize_and_log step, strictly ordered per PLAN §6:
     metrics → manifest (with the *planned* S3 URI) → upload → MLflow.
     The URI is computed before upload so the manifest inside the uploaded
@@ -78,10 +83,17 @@ def _summarize(config, paths: RunPaths) -> dict:
     if remote_uri:
         storage.upload_run_dir(paths)
 
+    # In docker mode paths.root is a container path that exists on no host;
+    # the DAG passes HOST_RUNS_DIR so provenance records a real location.
+    host_runs_dir = os.environ.get("HOST_RUNS_DIR")
+    local_path = (
+        f"{host_runs_dir.rstrip('/')}/{config.run_id}" if host_runs_dir else str(paths.root)
+    )
+
     mlflow_run_id = ""
     if tracking.tracking_uri():
         mlflow_run_id = tracking.log_run(
-            config, run_metrics, artifact_uri=remote_uri, local_path=str(paths.root)
+            config, run_metrics, artifact_uri=remote_uri, local_path=local_path
         )
 
     return {
@@ -103,23 +115,34 @@ def main(argv: list[str] | None = None) -> None:
 
     args = build_parser().parse_args(argv)
 
-    if args.command == "prepare-run":
-        overrides = {key: getattr(args, key) for key in PARAM_DEFAULTS}
-        config = resolve_config(overrides, run_id=args.run_id)
-        paths = init_run_dir(config)
-        result = {"run_id": config.run_id, "run_dir": str(paths.root)}
-    elif args.command == "run-agent":
-        paths = _paths_from(args.run_dir)
-        result = agent_runner.run_agent(load_config(paths), paths)
-    elif args.command == "run-eval":
-        paths = _paths_from(args.run_dir)
-        result = evaluator.run_eval(load_config(paths), paths)
-    elif args.command == "summarize":
-        paths = _paths_from(args.run_dir)
-        config = load_config(paths)
-        result = _summarize(config, paths)
-    else:  # pragma: no cover - argparse enforces the choices
-        raise SystemExit(f"unknown command {args.command!r}")
+    # Guard the stdout contract: libraries print banners (e.g. mlflow's
+    # "View run ..."), so everything in-process is redirected to stderr and
+    # only the final JSON line touches the real stdout.
+    with contextlib.redirect_stdout(sys.stderr):
+        if args.command == "prepare-run":
+            overrides = {key: getattr(args, key) for key in PARAM_DEFAULTS}
+            config = resolve_config(overrides, run_id=args.run_id)
+            try:
+                paths = init_run_dir(config)
+            except FileExistsError:
+                raise SystemExit(
+                    f"run dir for {config.run_id!r} already exists — refusing to "
+                    "overwrite a previous run's artifacts. Rerun with a fresh id, "
+                    f"e.g. --run-id {config.run_id}-rerun"
+                )
+            result = {"run_id": config.run_id, "run_dir": str(paths.root)}
+        elif args.command == "run-agent":
+            paths = _paths_from(args.run_dir)
+            result = agent_runner.run_agent(load_config(paths), paths)
+        elif args.command == "run-eval":
+            paths = _paths_from(args.run_dir)
+            result = evaluator.run_eval(load_config(paths), paths)
+        elif args.command == "summarize":
+            paths = _paths_from(args.run_dir)
+            config = load_config(paths)
+            result = _summarize(config, paths)
+        else:  # pragma: no cover - argparse enforces the choices
+            raise SystemExit(f"unknown command {args.command!r}")
 
     print(json.dumps(result))
 

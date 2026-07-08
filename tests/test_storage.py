@@ -13,11 +13,25 @@ FIXED_NOW = datetime(2026, 7, 2, 14, 25, 30, tzinfo=timezone.utc)
 
 
 class RecordingClient:
-    def __init__(self):
+    def __init__(self, existing: dict[str, int] | None = None):
         self.uploads: list[tuple[str, str, str]] = []
+        self._existing = existing or {}
 
     def upload_file(self, filename, bucket, key):
         self.uploads.append((filename, bucket, key))
+
+    def get_paginator(self, operation):
+        existing = self._existing
+
+        class Paginator:
+            def paginate(self, **kwargs):
+                yield {
+                    "Contents": [
+                        {"Key": key, "Size": size} for key, size in existing.items()
+                    ]
+                }
+
+        return Paginator()
 
 
 def test_planned_uri_is_computable_before_upload(monkeypatch):
@@ -44,3 +58,31 @@ def test_upload_mirrors_run_dir_under_run_id_prefix(tmp_path, monkeypatch):
     keys = {key for _, bucket, key in client.uploads if bucket == "runs"}
     assert f"{paths.run_id}/config.json" in keys
     assert f"{paths.run_id}/metrics.json" in keys
+
+
+def test_retry_upload_skips_unchanged_files_but_resends_roots(tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNS_BUCKET", "runs")
+    paths = init_run_dir(resolve_config(now=FIXED_NOW), root=tmp_path)
+    paths.metrics_path.write_text("{}")
+    trajectory = paths.trajectories_dir / "big.traj.json"
+    trajectory.write_text("x" * 100)
+
+    already_uploaded = {
+        f"{paths.run_id}/run-agent/trajectories/big.traj.json": 100,
+        f"{paths.run_id}/config.json": paths.config_path.stat().st_size,
+    }
+    client = RecordingClient(existing=already_uploaded)
+    upload_run_dir(paths, client=client)
+
+    keys = {key for _, _, key in client.uploads}
+    assert f"{paths.run_id}/run-agent/trajectories/big.traj.json" not in keys
+    assert f"{paths.run_id}/config.json" in keys  # mutable roots always re-sent
+
+
+def test_upload_skips_symlinks(tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNS_BUCKET", "runs")
+    paths = init_run_dir(resolve_config(now=FIXED_NOW), root=tmp_path)
+    (paths.root / "dangling").symlink_to("/nonexistent/target")
+    client = RecordingClient()
+    upload_run_dir(paths, client=client)
+    assert not any(key.endswith("/dangling") for _, _, key in client.uploads)

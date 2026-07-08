@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline.metrics import summarize_counts
+from pipeline.metrics import COUNTER_KEYS, summarize_counts
 
 SAMPLE_SUMMARY = Path("sample/nebius__moonshotai__Kimi-K2.6.test.json")
 
@@ -25,11 +25,7 @@ def test_sample_summary_distills_to_expected_metrics():
 
 
 def test_zero_submitted_means_zero_rate_not_crash():
-    summary = {key: 0 for key in (
-        "total_instances", "submitted_instances", "completed_instances",
-        "resolved_instances", "unresolved_instances",
-        "empty_patch_instances", "error_instances",
-    )}
+    summary = {key: 0 for key in COUNTER_KEYS}
     assert summarize_counts(summary)["resolve_rate"] == 0.0
 
 

@@ -62,6 +62,45 @@ def test_relocation_produces_spec_21_shape(tmp_path):
     assert (paths.eval_reports_dir / "astropy__astropy-12907.json").is_file()
 
 
+def test_relocation_is_retry_idempotent(tmp_path):
+    # An Airflow retry re-runs the harness AND relocation over the same run
+    # dir — the second pass must overwrite, never collide (ENOTEMPTY).
+    config, paths = _run(tmp_path)
+    _fake_harness_output(config, paths)
+    relocate_eval_outputs(config, paths)
+    _fake_harness_output(config, paths)
+    relocate_eval_outputs(config, paths)
+
+    assert (paths.eval_logs_dir / "astropy__astropy-12907" / "report.json").is_file()
+    assert (paths.eval_reports_dir / "summary.json").is_file()
+
+
+def test_relocation_strips_dangling_symlinks(tmp_path):
+    config, paths = _run(tmp_path)
+    _fake_harness_output(config, paths)
+    instance_dir = (
+        paths.eval_logs_dir / "run_evaluation" / config.run_id / MODEL_SLUG
+        / "astropy__astropy-12907"
+    )
+    (instance_dir / "image_build_dir").symlink_to("/nonexistent/absolute/path")
+    relocate_eval_outputs(config, paths)
+
+    relocated = paths.eval_logs_dir / "astropy__astropy-12907"
+    assert not any(p.is_symlink() for p in relocated.iterdir())
+
+
+def test_relocation_parks_build_logs_outside_logs(tmp_path):
+    config, paths = _run(tmp_path)
+    _fake_harness_output(config, paths)
+    build_log = paths.eval_logs_dir / "build_images" / "env" / "build.log"
+    build_log.parent.mkdir(parents=True)
+    build_log.write_text("...")
+    relocate_eval_outputs(config, paths)
+
+    assert not (paths.eval_logs_dir / "build_images").exists()
+    assert (paths.eval_dir / "build_images" / "env" / "build.log").is_file()
+
+
 def test_validate_requires_summary(tmp_path):
     config, paths = _run(tmp_path)
     with pytest.raises(RuntimeError, match="no summary"):

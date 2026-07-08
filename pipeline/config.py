@@ -4,9 +4,15 @@ from __future__ import annotations
 import importlib.metadata
 import json
 import os
+import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Explicit run ids reach filesystem paths, glob patterns, MLflow filter
+# strings, and S3 keys — restrict them to a safe slug so no sink needs
+# escaping. Generated ids always match.
+RUN_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 # The experiment knobs. Single source of truth for defaults (SPEC C1):
 # the CLI's argparse flags and the Airflow trigger form are both built from
@@ -65,7 +71,36 @@ class RunConfig:
 
 def runs_root() -> Path:
     """Root directory for run artifacts (env RUNS_ROOT, default ./runs)."""
-    return Path(os.environ.get("RUNS_ROOT", "./runs"))
+    return Path(os.environ.get("RUNS_ROOT") or "./runs")
+
+
+def mlflow_tracking_uri() -> str | None:
+    """MLFLOW_TRACKING_URI, or None when tracking is not configured.
+    Single accessor shared by tracking.py and artifacts.py so the manifest
+    can never disagree with where the run was actually logged."""
+    return os.environ.get("MLFLOW_TRACKING_URI") or None
+
+
+def mlflow_experiment_name() -> str:
+    """MLFLOW_EXPERIMENT_NAME with the project default (shared accessor)."""
+    return os.environ.get("MLFLOW_EXPERIMENT_NAME") or "swe-bench-evals"
+
+
+def load_env_file(path: Path, override: bool = False) -> None:
+    """Minimal stdlib .env loader (KEY=VALUE lines, # comments, optional
+    quotes). Exists so Layer 4 — which may import only this module — can
+    load project env vars without python-dotenv being installed in the
+    orchestrator environment. Missing file is a no-op."""
+    if not path.is_file():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip("'\"")
+        if override or not os.environ.get(key):
+            os.environ[key] = value
 
 
 def generate_run_id(now: datetime, subset: str, task_slice: str) -> str:
@@ -106,6 +141,11 @@ def resolve_config(
     unknown = set(provided) - set(PARAM_DEFAULTS)
     if unknown:
         raise ValueError(f"unknown parameters: {sorted(unknown)}")
+    if run_id is not None and not RUN_ID_PATTERN.fullmatch(run_id):
+        raise ValueError(
+            f"invalid run_id {run_id!r}: use only letters, digits, '.', '_', '-' "
+            "(it becomes a directory name, an S3 prefix, and an MLflow tag)"
+        )
     params = {**PARAM_DEFAULTS, **provided}
     if params["subset"] not in SUBSET_DATASETS:
         raise ValueError(

@@ -15,11 +15,15 @@ SPEC 2.1 shape:
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from pipeline.config import RunConfig, runs_root
+from pipeline.config import (
+    RunConfig,
+    mlflow_experiment_name,
+    mlflow_tracking_uri,
+    runs_root,
+)
 
 
 @dataclass(frozen=True)
@@ -120,8 +124,8 @@ def build_manifest(paths: RunPaths, remote_uri: str = "") -> dict:
         "eval_reports": rel(paths.eval_reports_dir, trailing_slash=True),
         "remote_artifact_uri": remote_uri,
         "mlflow": {
-            "tracking_uri": os.environ.get("MLFLOW_TRACKING_URI", ""),
-            "experiment": os.environ.get("MLFLOW_EXPERIMENT_NAME", ""),
+            "tracking_uri": mlflow_tracking_uri() or "",
+            "experiment": mlflow_experiment_name(),
         },
     }
 
